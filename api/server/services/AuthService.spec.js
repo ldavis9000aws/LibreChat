@@ -16,7 +16,7 @@ jest.mock(
     ErrorTypes: {},
     SystemRoles: { USER: 'USER', ADMIN: 'ADMIN' },
     errorsToString: jest.fn(),
-    SESSION_EXPIRY_COOKIE: 'session_expires_at',
+    SESSION_HINT_COOKIE: 'session_hint',
   }),
   { virtual: false },
 );
@@ -39,7 +39,7 @@ jest.mock(
           sameSite: 'strict',
         });
       }),
-      setSessionExpiryCookie: jest.fn(),
+      setSessionHintCookie: jest.fn(),
       setOpenIDMarkerCookies: jest.fn((res, { userId, expires }) => {
         res.cookie('token_provider', 'openid', {
           expires,
@@ -139,7 +139,7 @@ let isEmailDomainAllowed;
 let resolveAppConfigForUser;
 let setRefreshTokenCookie;
 let setOpenIDMarkerCookies;
-let setSessionExpiryCookie;
+let setSessionHintCookie;
 let setCloudFrontCookies;
 let getCloudFrontConfig;
 let parseCloudFrontCookieScope;
@@ -182,7 +182,7 @@ jest.isolateModules(() => {
     commitPasswordReset,
     setRefreshTokenCookie,
     setOpenIDMarkerCookies,
-    setSessionExpiryCookie,
+    setSessionHintCookie,
     setCloudFrontCookies,
     getCloudFrontConfig,
     parseCloudFrontCookieScope,
@@ -1625,7 +1625,7 @@ describe('CloudFront cookie integration', () => {
       );
     });
 
-    it('mirrors the session expiry in the readable cookie the theme replay checks', async () => {
+    it('names the session owner and expiry in the readable cookie the theme replay checks', async () => {
       const expiration = new Date(Date.now() + 604800000);
       createSession.mockResolvedValueOnce({
         session: { expiration },
@@ -1635,7 +1635,10 @@ describe('CloudFront cookie integration', () => {
 
       await setAuthTokens('user-123', res);
 
-      expect(setSessionExpiryCookie).toHaveBeenCalledWith(res, expiration);
+      expect(setSessionHintCookie).toHaveBeenCalledWith(res, expiration, {
+        userId: 'user-123',
+        tenantId: 'tenantA',
+      });
     });
 
     it('re-stamps the expiry of the session a refresh keeps', async () => {
@@ -1645,7 +1648,10 @@ describe('CloudFront cookie integration', () => {
       await setAuthTokens('user-123', res, { _id: 'session-1', expiration });
 
       expect(createSession).not.toHaveBeenCalled();
-      expect(setSessionExpiryCookie).toHaveBeenCalledWith(res, expiration);
+      expect(setSessionHintCookie).toHaveBeenCalledWith(res, expiration, {
+        userId: 'user-123',
+        tenantId: 'tenantA',
+      });
     });
 
     it('succeeds even when setCloudFrontCookies returns false', async () => {
