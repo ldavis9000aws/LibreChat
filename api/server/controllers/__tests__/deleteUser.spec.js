@@ -127,6 +127,8 @@ jest.mock('~/models', () => ({
   deleteAllAgentQueuedTurnsForUser: jest.fn(),
   deleteSchedulesByUser: (...args) => mockDeleteSchedulesByUser(...args),
   getSoleOwnedResourceIds: jest.fn().mockResolvedValue([]),
+  findUserErasableMCPServers: jest.fn().mockResolvedValue([]),
+  deleteMCPServersWithAcl: jest.fn(),
 }));
 
 jest.mock('~/server/services/PluginService', () => ({
